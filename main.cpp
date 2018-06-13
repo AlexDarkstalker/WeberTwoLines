@@ -3,6 +3,7 @@
 #include <list>
 #include <string>
 #include <iterator>
+#include <cmath>
 
 struct Object {
     int numObject;
@@ -161,8 +162,35 @@ void printMatrix (int** matrix, int height, int width) {
 }
 
 
-
-double countBindCostInLines(Line line1, Line line2) {
+double countBindCostInLines(Line line1, Line line2, int** bindCostMatrix, int bindCostMatrSize, int** restrictBindCostMatrix, int restrMatrHeight, int restrBindCostMatrWidth) {
+    std::list<Object>::iterator it = line1.objectsInLine->begin();
+    std::list<Object>::iterator iterator = it;
+    advance(iterator, 1);
+    double sum = 0.;
+    while(it != line1.objectsInLine->end()) {
+        while(iterator != line1.objectsInLine->end()) {
+            if(!it->isRestrictedArea) {
+                if (iterator->isRestrictedArea) {
+                    sum += abs(iterator->middle - it->middle) *
+                           restrictBindCostMatrix[iterator->numObject][it->numObject];
+                    advance(iterator, 1);
+                } else {
+                    sum += abs(iterator->middle - it->middle) * bindCostMatrix[iterator->numObject][it->numObject];
+                    advance(iterator, 1);
+                }
+            }
+            else{
+                if (iterator->isRestrictedArea) {
+//                    sum += abs(iterator->middle - it->middle) *
+//                           restrictBindCostMatrix[iterator->numObject][it->numObject];
+                    advance(iterator, 1);
+                } else {
+                    sum += abs(iterator->middle - it->middle) * restrictBindCostMatrix[it->numObject][iterator->numObject];
+                    advance(iterator, 1);
+                }
+            }
+        }
+    }
 
 }
 
