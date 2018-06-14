@@ -43,12 +43,12 @@ Line *createLine(char *fileName) {
 
 void outputLine(Line line) {
     std::cout << line.length << " " << line.numOfRestrictedAreas << std::endl;
-    std::list<Object>::iterator it = line.objectsInLine->begin();
+    auto it = line.objectsInLine->begin();
     int i = 0;
     while(it!=line.objectsInLine->end()) {
         std::cout << "Area" << i << ":" << std::endl;
         std::cout << it->numObject << " " << it->isRestrictedArea << " " << it->length << " " << it->left << " "
-                  << it->right << std::endl;
+                  << it->right << " "<< it->middle <<std::endl;
         advance(it, 1);
         i++;
     }
@@ -161,43 +161,63 @@ void printMatrix (int** matrix, int height, int width) {
     }
 }
 
-
-double countBindCostInLines(Line line1, Line line2, int** bindCostMatrix, int bindCostMatrSize, int** restrictBindCostMatrix, int restrMatrHeight, int restrBindCostMatrWidth) {
-    std::list<Object>::iterator it = line1.objectsInLine->begin();
-    std::list<Object>::iterator iterator = it;
-    advance(iterator, 1);
+double countBindCostForObject(Line line, std::list<Object>::iterator it, std::list<Object>::iterator iterator, int** bindCostMatrix, int** restrictBindCostMatrix) {
     double sum = 0.;
-    while(it != line1.objectsInLine->end()) {
-        while(iterator != line1.objectsInLine->end()) {
-            if(!it->isRestrictedArea) {
-                if (iterator->isRestrictedArea) {
-                    sum += abs(iterator->middle - it->middle) *
-                           restrictBindCostMatrix[iterator->numObject][it->numObject];
-                    advance(iterator, 1);
-                } else {
-                    sum += abs(iterator->middle - it->middle) * bindCostMatrix[iterator->numObject][it->numObject];
-                    advance(iterator, 1);
-                }
+    while(iterator != line.objectsInLine->end()) {
+        if(!it->isRestrictedArea) {
+            if (iterator->isRestrictedArea) {
+                sum += fabs(iterator->middle - it->middle) *
+                       restrictBindCostMatrix[iterator->numObject][it->numObject];
+                advance(iterator, 1);
+            } else {
+                sum += fabs(iterator->middle - it->middle) * bindCostMatrix[iterator->numObject][it->numObject];
+                advance(iterator, 1);
             }
-            else{
-                if (iterator->isRestrictedArea) {
+        }
+        else{
+            if (iterator->isRestrictedArea) {
 //                    sum += abs(iterator->middle - it->middle) *
 //                           restrictBindCostMatrix[iterator->numObject][it->numObject];
-                    advance(iterator, 1);
-                } else {
-                    sum += abs(iterator->middle - it->middle) * restrictBindCostMatrix[it->numObject][iterator->numObject];
-                    advance(iterator, 1);
-                }
+                advance(iterator, 1);
+            } else {
+                sum += fabs(iterator->middle - it->middle) * restrictBindCostMatrix[it->numObject][iterator->numObject];
+                advance(iterator, 1);
             }
         }
     }
+}
 
+double countBindCostInLines(Line line1, Line line2, int** bindCostMatrix, int** restrictBindCostMatrix) {
+    auto it = line1.objectsInLine->begin();
+    auto iterator = it;
+    advance(iterator, 1);
+    double sum = 0.;
+    int i = 0;
+    while(it != line1.objectsInLine->end()) {
+        sum+=countBindCostForObject(line1, it, iterator, bindCostMatrix, restrictBindCostMatrix);
+        iterator = line2.objectsInLine->begin();
+        sum+=countBindCostForObject(line2, it, iterator, bindCostMatrix, restrictBindCostMatrix);
+        advance(it, 1);
+        iterator = it;
+        advance(iterator, 1);
+    }
+    it = line2.objectsInLine->begin();
+    iterator = it;
+    advance(iterator, 1);
+    while(it != line2.objectsInLine->end()) {
+        sum+=countBindCostForObject(line2, it, iterator, bindCostMatrix, restrictBindCostMatrix);
+        advance(it, 1);
+        iterator = it;
+        advance(iterator, 1);
+    }
+    return sum;
 }
 
 int main() {
     std::ofstream fout("Output");
     Line *line1 = createLine("InputLine1");
     Line *line2 = createLine("InputLine2");
+    double bindSum;
     int size;
     int matrBindCostHeight, matrBindCostWidth;
     int matrRestrictedCostHeight, matrRestrictedCostWidth;
@@ -211,6 +231,8 @@ int main() {
     addObjects(*line1, *line2, objects, size);
     outputLine(*line1);
     outputLine(*line2);
+    bindSum = countBindCostInLines(*line1, *line2, matrixBindCost, matrixRestrictedCosts);
+    std::cout << "Bind cost is " << bindSum << std::endl;
     deleteLine(*line2);
     deleteMatrix(matrixBindCost, matrBindCostHeight, matrBindCostWidth);
     deleteMatrix(matrixRestrictedCosts, matrRestrictedCostHeight, matrRestrictedCostWidth);
